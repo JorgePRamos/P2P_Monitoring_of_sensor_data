@@ -79,7 +79,7 @@ public class Reading {
 
             String[] t_val = new String[6];
             try {
-                t_val = Files.readAllLines(Paths.get("readings.csv")).get((int) Math.abs(currentTime % 101 + 1)).split(",");//Copiado en proyecto bien?¡¿
+                t_val = Files.readAllLines(Paths.get("src/readings.csv")).get((int) Math.abs(currentTime % 101 + 1)).split(",");//Copiado en proyecto bien?¡¿
             } catch (InvalidPathException | IOException e) {
                 System.out.println("Error path");
             }

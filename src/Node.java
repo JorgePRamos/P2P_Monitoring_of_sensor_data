@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.net.*;
 import java.util.Arrays;
+import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,7 +22,7 @@ class ServerClass implements Runnable {
         // host
         DatagramSocket socket = null; //QUE lost-rate??¿?
         try {
-            socket = new SimpleSimulatedDatagramSocket(PORT, 0.2, 1000);
+            socket = new SimpleSimulatedDatagramSocket(PORT, 0.1, 1000);
         } catch (SocketException e) {
             e.printStackTrace();
         }
@@ -65,10 +66,10 @@ class ServerClass implements Runnable {
 }
 
 class ClientClass implements Runnable {
-    private int PORT;
+    private int NodesNumber;
 
-    public ClientClass(int PORT) {
-        this.PORT = PORT;
+    public ClientClass(int nodesNumber) {
+        NodesNumber = nodesNumber;
     }
 
     public void run() {
@@ -99,16 +100,20 @@ class ClientClass implements Runnable {
         //DatagramSocket socket = new SimulatedDatagramSocket(0.2, 1, 200, 50); //SOCKET
         DatagramSocket socket = null; //SOCKET
         try {
-            socket = new SimpleSimulatedDatagramSocket(0.2, 1000);
+            socket = new SimpleSimulatedDatagramSocket(0.9, 1000);
         } catch (SocketException e) {
             e.printStackTrace();
         }
-
-        StringBuffer receiveString = packageManagement(sendString, rcvBuf, address, socket);
+        System.out.print("Client sends: ");
+        int port = Integer.parseInt( new Scanner(System.in).next());
+        StringBuffer receiveString = packageManagement(sendString, rcvBuf,port,  address, socket);
+        System.out.println(receiveString);
         if (receiveString.length() == 0 || receiveString.length() != sendString.length()) {
-            StringBuffer stringBuffer2 = packageManagement(sendString, rcvBuf, address, socket);
+            StringBuffer stringBuffer2 = packageManagement(sendString, rcvBuf,port,  address, socket);
+            System.out.println("ACK1 fail");
             if (stringBuffer2.length() == 0 || stringBuffer2.length() != sendString.length()) {
                 socket.close();
+                System.out.println("ACK2 fail");
                 return;//???
             }
         }
@@ -118,16 +123,16 @@ class ClientClass implements Runnable {
         socket.close(); //CLOSE
     }
 
-    private StringBuffer packageManagement(String sendString, byte[] rcvBuf, InetAddress address, DatagramSocket socket) {
-        System.out.print("Client sends: ");
+    private StringBuffer packageManagement(String sendString, byte[] rcvBuf, int port, InetAddress address, DatagramSocket socket) {
         // send each character as a separate datagram packet
+
         for (int i = 0; i < sendString.length(); i++) {
             byte[] sendBuf = new byte[1];// sent bytes
             sendBuf[0] = (byte) sendString.charAt(i);
 
             // create a datagram packet for sending data
             DatagramPacket packet = new DatagramPacket(sendBuf, sendBuf.length,
-                    address, PORT);
+                    address, port );
 
             // send a datagram packet from this socket
             try {
@@ -167,15 +172,10 @@ class ClientClass implements Runnable {
 }
 
 public class Node {
-    public static String nodeRun(int serverPort, int clientPort) {
-        System.out.println(ProcessHandle.current().pid());
-        new Thread(new ServerClass(serverPort)).start();
-        new Thread(new ClientClass(clientPort)).start();
-        return " ";
-    }
+
 
     public static void main(String[] args) {
-        System.out.println("trrrr");
-
+        new Thread(new ServerClass(Integer.parseInt( new Scanner(System.in).next()))).start();
+        new Thread(new ClientClass(Integer.parseInt( new Scanner(System.in).next()))).start();
     }
 }
