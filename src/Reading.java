@@ -73,7 +73,7 @@ public class Reading {
         this.so2 = so2;
     }
 
-    public void generateReadings(Double currentTime){
+    public float[] generateReadings(long currentTime){
         //currentTime = System.nanoTime() - start
         //start = int star_t = (int) System.nanoTime(); At beggining of life of node
 
@@ -90,12 +90,16 @@ public class Reading {
                 if (t_val[x].isEmpty())
                     t_val[x] = String.valueOf(-1);
             }
-            setTemp(Float.parseFloat(t_val[3]));
+            setTemp(Float.parseFloat(t_val[0]));
             setPress(Float.parseFloat(t_val[1]));
             setHum(Float.parseFloat(t_val[2]));
             setCo(Float.parseFloat(t_val[3]));
             setNo2(Float.parseFloat(t_val[4]));
             setSo2(Float.parseFloat(t_val[5]));
+
+
+             float[] exit = {getTemp(),getPress(),getHum(),getCo(),getNo2(),getSo2()};
+             return exit;
 
 
 

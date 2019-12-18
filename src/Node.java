@@ -1,10 +1,11 @@
 import java.io.IOException;
 import java.net.*;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 class ServerClass implements Runnable {
-     private int PORT = 10001; // server port
+    private int PORT; // server port
 
     public ServerClass(int PORT) {
         this.PORT = PORT;
@@ -60,93 +61,121 @@ class ServerClass implements Runnable {
         }
     }
 
+    //------------------------------------------------------------------------------------------------------------------
 }
-class ClientClass implements Runnable{
-    private int PORT = 10002;
+
+class ClientClass implements Runnable {
+    private int PORT;
 
     public ClientClass(int PORT) {
         this.PORT = PORT;
     }
-    //-----------------------------------------------------------------------------------------------------------------------------------------------------------
 
-        public void run() {
-            long startTime = System.nanoTime();
-            String sendString = "Any string...";
+    public void run() {
+        //long startTime = System.nanoTime();//usar emulated system clock¿?
+        EmulatedSystemClock eck = new EmulatedSystemClock();
+        long startTime = eck.currentTimeMillis();
 
-            byte[] rcvBuf = new byte[256]; // received bytes
 
-            // encode this String into a sequence of bytes using the platform's
-            // default charset and store it into a new byte array
+        //each second
+        Reading temp = new Reading();
+        String sendString = Arrays.toString(temp.generateReadings(eck.currentTimeMillis() - startTime));
 
-            // determine the IP address of a host, given the host's name
-            InetAddress address = null;
-            try {
-                address = InetAddress.getByName("localhost");
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
-            }
+        byte[] rcvBuf = new byte[256]; // received bytes
 
-            // create a datagram socket and bind it to any available
-            // port on the local host
-            //DatagramSocket socket = new SimulatedDatagramSocket(0.2, 1, 200, 50); //SOCKET
-            DatagramSocket socket = null; //SOCKET
-            try {
-                socket = new SimpleSimulatedDatagramSocket(0.2, 1000);
-            } catch (SocketException e) {
-                e.printStackTrace();
-            }
+        // encode this String into a sequence of bytes using the platform's
+        // default charset and store it into a new byte array
 
-            System.out.print("Client sends: ");
-            // send each character as a separate datagram packet
-            for (int i = 0; i < sendString.length(); i++) {
-                byte[] sendBuf = new byte[1];// sent bytes
-                sendBuf[0] = (byte) sendString.charAt(i);
-
-                // create a datagram packet for sending data
-                DatagramPacket packet = new DatagramPacket(sendBuf, sendBuf.length,
-                        address, PORT);
-
-                // send a datagram packet from this socket
-                try {
-                    socket.send(packet); //SENDTO
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                System.out.print(new String(sendBuf));
-            }
-            System.out.println("");
-
-            StringBuffer receiveString = new StringBuffer();
-
-            while (true) {
-                // create a datagram packet for receiving data
-                DatagramPacket rcvPacket = new DatagramPacket(rcvBuf, rcvBuf.length);
-
-                try {
-                    // receive a datagram packet from this socket
-                    socket.receive(rcvPacket); //RECVFROM
-                } catch (SocketTimeoutException e) {
-                    break;
-                } catch (IOException ex) {
-                    Logger.getLogger(Node.class.getName()).log(Level.SEVERE, null, ex);
-                }
-
-                // construct a new String by decoding the specified subarray of bytes
-                // using the platform's default charset
-                receiveString.append(new String(rcvPacket.getData(), rcvPacket.getOffset(), rcvPacket.getLength()));
-
-            }
-            System.out.println("Client received: " + receiveString);
-
-            // close the datagram socket
-            socket.close(); //CLOSE
+        // determine the IP address of a host, given the host's name
+        InetAddress address = null;
+        try {
+            address = InetAddress.getByName("localhost");
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
         }
 
+        // create a datagram socket and bind it to any available
+        // port on the local host
+        //DatagramSocket socket = new SimulatedDatagramSocket(0.2, 1, 200, 50); //SOCKET
+        DatagramSocket socket = null; //SOCKET
+        try {
+            socket = new SimpleSimulatedDatagramSocket(0.2, 1000);
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+
+        StringBuffer receiveString = packageManagement(sendString, rcvBuf, address, socket);
+        if (receiveString.length() == 0 || receiveString.length() != sendString.length()) {
+            StringBuffer stringBuffer2 = packageManagement(sendString, rcvBuf, address, socket);
+            if (stringBuffer2.length() == 0 || stringBuffer2.length() != sendString.length()) {
+                socket.close();
+                return;//???
+            }
+        }
+        System.out.println("Client received: " + receiveString);
+
+        // close the datagram socket
+        socket.close(); //CLOSE
+    }
+
+    private StringBuffer packageManagement(String sendString, byte[] rcvBuf, InetAddress address, DatagramSocket socket) {
+        System.out.print("Client sends: ");
+        // send each character as a separate datagram packet
+        for (int i = 0; i < sendString.length(); i++) {
+            byte[] sendBuf = new byte[1];// sent bytes
+            sendBuf[0] = (byte) sendString.charAt(i);
+
+            // create a datagram packet for sending data
+            DatagramPacket packet = new DatagramPacket(sendBuf, sendBuf.length,
+                    address, PORT);
+
+            // send a datagram packet from this socket
+            try {
+                socket.send(packet); //SENDTO
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            System.out.print(new String(sendBuf));
+        }
+        System.out.println("");
+        //==========================================================================================================
+        StringBuffer receiveString = new StringBuffer();//Buffer used for received String
+
+        while (true) {
+            // create a datagram packet for receiving data
+            DatagramPacket rcvPacket = new DatagramPacket(rcvBuf, rcvBuf.length);
+
+            try {
+                // receive a datagram packet from this socket
+                socket.receive(rcvPacket); //RECVFROM
+
+
+            } catch (SocketTimeoutException e) {
+                break;
+            } catch (IOException ex) {
+                Logger.getLogger(Node.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+            // construct a new String by decoding the specified subarray of bytes
+            // using the platform's default charset
+            receiveString.append(new String(rcvPacket.getData(), rcvPacket.getOffset(), rcvPacket.getLength()));
+
+        }
+        return receiveString;
+    }
+
 }
+
 public class Node {
-    public void nodeRun(int serverPort, int clientPort) {
+    public static String nodeRun(int serverPort, int clientPort) {
+        System.out.println(ProcessHandle.current().pid());
         new Thread(new ServerClass(serverPort)).start();
         new Thread(new ClientClass(clientPort)).start();
+        return " ";
+    }
+
+    public static void main(String[] args) {
+        System.out.println("trrrr");
 
     }
 }
