@@ -1,9 +1,11 @@
 import java.io.IOException;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.IntStream;
 
 class ServerClass implements Runnable {
     private int PORT; // server port
@@ -66,10 +68,10 @@ class ServerClass implements Runnable {
 }
 
 class ClientClass implements Runnable {
-    private int NodesNumber;
+    private int portSend;
 
-    public ClientClass(int nodesNumber) {
-        NodesNumber = nodesNumber;
+    public ClientClass(int portSend) {
+        this.portSend = portSend;
     }
 
     public void run() {
@@ -105,11 +107,11 @@ class ClientClass implements Runnable {
             e.printStackTrace();
         }
         System.out.print("Client sends: ");
-        int port = Integer.parseInt( new Scanner(System.in).next());
-        StringBuffer receiveString = packageManagement(sendString, rcvBuf,port,  address, socket);
+
+        StringBuffer receiveString = packageManagement(sendString, rcvBuf, portSend, address, socket);
         System.out.println(receiveString);
         if (receiveString.length() == 0 || receiveString.length() != sendString.length()) {
-            StringBuffer stringBuffer2 = packageManagement(sendString, rcvBuf,port,  address, socket);
+            StringBuffer stringBuffer2 = packageManagement(sendString, rcvBuf, portSend, address, socket);
             System.out.println("ACK1 fail");
             if (stringBuffer2.length() == 0 || stringBuffer2.length() != sendString.length()) {
                 socket.close();
@@ -132,7 +134,7 @@ class ClientClass implements Runnable {
 
             // create a datagram packet for sending data
             DatagramPacket packet = new DatagramPacket(sendBuf, sendBuf.length,
-                    address, port );
+                    address, port);
 
             // send a datagram packet from this socket
             try {
@@ -174,8 +176,28 @@ class ClientClass implements Runnable {
 public class Node {
 
 
-    public static void main(String[] args) {
-        new Thread(new ServerClass(Integer.parseInt( new Scanner(System.in).next()))).start();
-        new Thread(new ClientClass(Integer.parseInt( new Scanner(System.in).next()))).start();
+    public static void main(String[] args) throws InterruptedException {
+        ArrayList<Thread> hilosSend = new ArrayList<>();
+        int[] ports = IntStream.rangeClosed(1000, 1050).toArray();
+        int serverPort = Integer.parseInt(new Scanner(System.in).next());
+        new Thread(new ServerClass(serverPort)).start();
+        int NodesNumber = Integer.parseInt(new Scanner(System.in).next());
+
+        //cada 5seg?
+        EmulatedSystemClock emulatedSystemClock = new EmulatedSystemClock();
+        while (true) {
+            while (emulatedSystemClock.currentTimeMillis() > (5.00f - 5.00f * 0.2)) {
+                Thread tempThread;
+                for (int a = 0; a < NodesNumber; a++) {
+                    if (ports[a] != serverPort) {
+                        tempThread = new Thread(new ClientClass(ports[a]));//tiempo de medida
+                        hilosSend.add(tempThread);
+                        tempThread.start();
+                    }
+                }
+                Thread.sleep(1000);
+            }
+            System.out.println("medias?");
+        }
     }
 }
