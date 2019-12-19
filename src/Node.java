@@ -28,7 +28,7 @@ class ServerClass implements Runnable {
         } catch (SocketException e) {
             e.printStackTrace();
         }
-
+        StringBuffer rcvString = new StringBuffer();
         while (true) {
             // create a DatagramPacket for receiving packets
             DatagramPacket packet = new DatagramPacket(rcvBuf, rcvBuf.length);
@@ -43,14 +43,19 @@ class ServerClass implements Runnable {
             // construct a new String by decoding the specified subarray of
             // bytes
             // using the platform's default charset
-            rcvStr = new String(packet.getData(), packet.getOffset(),
-                    packet.getLength());
-            System.out.println("Server received: " + rcvStr);
+            String tempRcv = new String(packet.getData(), packet.getOffset(), packet.getLength());
+            rcvString.append(tempRcv);
+            if(tempRcv.equals("]")){
+        System.out.println("Server RCV: "+rcvString);
+        rcvString = new StringBuffer();
+
+            }
+
+
 
             // encode a String into a sequence of bytes using the platform's
             // default charset
-            sendBuf = rcvStr.toUpperCase().getBytes();
-            System.out.println("Server sends: " + rcvStr.toUpperCase());
+
 
             // create a DatagramPacket for sending packets
             DatagramPacket sendPacket = new DatagramPacket(sendBuf, sendBuf.length, packet.getAddress(), packet.getPort());
@@ -61,6 +66,7 @@ class ServerClass implements Runnable {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
         }
     }
 
@@ -102,7 +108,7 @@ class ClientClass implements Runnable {
         //DatagramSocket socket = new SimulatedDatagramSocket(0.2, 1, 200, 50); //SOCKET
         DatagramSocket socket = null; //SOCKET
         try {
-            socket = new SimpleSimulatedDatagramSocket(0.9, 1000);
+            socket = new SimpleSimulatedDatagramSocket(0.4, 1000);
         } catch (SocketException e) {
             e.printStackTrace();
         }
@@ -145,6 +151,7 @@ class ClientClass implements Runnable {
             System.out.print(new String(sendBuf));
         }
         System.out.println("");
+
         //==========================================================================================================
         StringBuffer receiveString = new StringBuffer();//Buffer used for received String
 
@@ -177,14 +184,19 @@ public class Node {
 
 
     public static void main(String[] args) throws InterruptedException {
+        assert (args.length==2);
+
         ArrayList<Thread> hilosSend = new ArrayList<>();
         int[] ports = IntStream.rangeClosed(1000, 1050).toArray();
-        int serverPort = Integer.parseInt(new Scanner(System.in).next());
+        int serverPort= Integer.parseInt(args[0]);
+        //int serverPort = Integer.parseInt(new Scanner(System.in).next());
         new Thread(new ServerClass(serverPort)).start();
-        int NodesNumber = Integer.parseInt(new Scanner(System.in).next());
+        int NodesNumber= Integer.parseInt(args[1]);
+        //int NodesNumber = Integer.parseInt(new Scanner(System.in).next());
 
         //cada 5seg?
         EmulatedSystemClock emulatedSystemClock = new EmulatedSystemClock();
+        new Scanner(System.in).next();
         while (true) {
             while (emulatedSystemClock.currentTimeMillis() > (5.00f - 5.00f * 0.2)) {
                 Thread tempThread;
